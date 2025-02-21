@@ -18,12 +18,40 @@ struct CalculatorButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.title)
+                .font(.title2)
                 .fontWeight(.medium)
                 .foregroundColor(.white)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minWidth: 44, maxWidth: .infinity)
+                .frame(height: 60)
+                .background(color)
+                .cornerRadius(12)
+                .shadow(radius: 2)
         }
-        .background(color)
-        .cornerRadius(12)
+        .buttonStyle(CalculatorButtonStyle())
+    }
+}
+
+struct CalculatorButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+#Preview {
+    HStack {
+        CalculatorButton(title: "1") {}
+        CalculatorButton(title: "+", color: .orange) {}
+    }
+    .padding()
+}
+
+extension CalculatorButton {
+    struct Config: Hashable {
+        enum Action: Hashable {
+            case financial(String)
+        }
     }
 } 

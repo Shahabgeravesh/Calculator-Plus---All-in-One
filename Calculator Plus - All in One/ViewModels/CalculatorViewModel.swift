@@ -5,6 +5,9 @@ class CalculatorViewModel: ObservableObject {
     @Published var displayValue: String = "0"
     @Published var currentMode: CalculatorMode = .standard
     @Published var showScientificFunctions: Bool = false
+    @Published var rate: Double = 0.0
+    @Published var periods: Int = 0
+    @Published var principal: Double = 0.0
     
     private var firstNumber: Double?
     private var operation: String?
@@ -131,5 +134,29 @@ class CalculatorViewModel: ObservableObject {
     
     func memoryClear() {
         memory = 0
+    }
+    
+    // Financial calculator functions
+    func calculateCompoundInterest() {
+        let amount = principal * pow(1 + rate/100, Double(periods))
+        displayValue = String(format: "%.2f", amount)
+    }
+    
+    func calculateLoanPayment() {
+        let monthlyRate = rate / (100 * 12)
+        let numberOfPayments = Double(periods * 12)
+        let payment = principal * monthlyRate * pow(1 + monthlyRate, numberOfPayments) / (pow(1 + monthlyRate, numberOfPayments) - 1)
+        displayValue = String(format: "%.2f", payment)
+    }
+    
+    func calculateSimpleInterest() {
+        let interest = principal * rate * Double(periods) / 100
+        displayValue = String(format: "%.2f", principal + interest)
+    }
+    
+    // Mode change function
+    func modeChanged() {
+        clear()
+        showScientificFunctions = currentMode == .scientific
     }
 } 
