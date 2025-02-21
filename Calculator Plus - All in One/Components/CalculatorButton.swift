@@ -51,6 +51,10 @@ struct CalculatorButton: View {
                 )
         }
         .buttonStyle(CalculatorButtonStyle())
+        .calculatorAccessibility(
+            label: getAccessibilityLabel(),
+            hint: getAccessibilityHint()
+        )
     }
     
     private func getFontSize() -> CGFloat {
@@ -62,6 +66,26 @@ struct CalculatorButton: View {
             return baseSize * 0.7
         }
         return baseSize
+    }
+    
+    private func getAccessibilityLabel() -> String {
+        switch config.action {
+        case .number: return "\(config.title) button"
+        case .operation: return "\(config.title) operation"
+        case .scientific: return "\(config.title) function"
+        default: return config.title
+        }
+    }
+    
+    private func getAccessibilityHint() -> String {
+        switch config.action {
+        case .number: return "Enters the number \(config.title)"
+        case .operation: return "Performs \(config.title) operation"
+        case .scientific: return "Calculates \(config.title) function"
+        case .equals: return "Calculates the result"
+        case .clear: return "Clears the calculator"
+        default: return ""
+        }
     }
 }
 
@@ -150,4 +174,4 @@ extension CalculatorButton {
             case double
         }
     }
-} 
+}  

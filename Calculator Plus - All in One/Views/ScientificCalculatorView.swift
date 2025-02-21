@@ -14,12 +14,38 @@ struct ScientificCalculatorView: View {
         Array(repeating: GridItem(.flexible(), spacing: getSpacing()), count: gridColumns)
     }
     
+    // Add this property for better organization
+    private var scientificFunctions: [(String, String)] {
+        [
+            ("sine", "sin"),
+            ("cosine", "cos"),
+            ("tangent", "tan"),
+            ("pi", "π"),
+            ("euler", "e"),
+            ("square", "x²"),
+            ("cube", "x³"),
+            ("power", "xʸ"),
+            ("square root", "√"),
+            ("logarithm", "log"),
+            ("natural logarithm", "ln"),
+            ("reciprocal", "1/x")
+        ]
+    }
+    
+    private let keyboardController: KeyboardCommandsController
+    
+    init(viewModel: CalculatorViewModel) {
+        self.viewModel = viewModel
+        self.keyboardController = KeyboardCommandsController(viewModel: viewModel)
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 // Display
                 DisplayView(value: viewModel.displayValue, hasMemory: viewModel.hasMemoryValue)
-                    .frame(height: geometry.size.height * 0.15) // Reduced height
+                    .frame(height: geometry.size.height * 0.15)
+                    .accessibilityLabel("Calculator display showing \(viewModel.displayValue)")
                 
                 // Calculator Area
                 ScrollView(.vertical, showsIndicators: false) {
@@ -31,30 +57,19 @@ struct ScientificCalculatorView: View {
                                 .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal)
+                                .accessibilityAddTraits(.isHeader)
                             
-                            // Scientific Functions Grid
                             LazyVGrid(
                                 columns: gridLayout,
                                 spacing: getSpacing()
                             ) {
-                                Group {
-                                    ForEach(["sin", "cos", "tan", "π"], id: \.self) { function in
-                                        ScientificButton(title: function) { 
-                                            viewModel.performScientificOperation(function) 
-                                        }
+                                ForEach(scientificFunctions, id: \.0) { function, symbol in
+                                    ScientificButton(title: symbol) {
+                                        viewModel.performScientificOperation(function)
                                     }
+                                    .accessibilityLabel("\(function) function")
+                                    .accessibilityHint("Calculates the \(function) of the current value")
                                 }
-                                Group {
-                                    ForEach(["e", "x²", "x³", "xʸ"], id: \.self) { function in
-                                        ScientificButton(title: function) { 
-                                            viewModel.performScientificOperation(function) 
-                                        }
-                                    }
-                                }
-                                ScientificButton(title: "√") { viewModel.performScientificOperation("√") }
-                                ScientificButton(title: "log") { viewModel.performScientificOperation("log") }
-                                ScientificButton(title: "ln") { viewModel.performScientificOperation("ln") }
-                                ScientificButton(title: "1/x") { viewModel.performScientificOperation("1/x") }
                             }
                         }
                         .padding(.top, getSpacing())
@@ -66,6 +81,7 @@ struct ScientificCalculatorView: View {
                                 .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal)
+                                .accessibilityAddTraits(.isHeader)
                             
                             HStack(spacing: getSpacing()) {
                                 ForEach(["MC", "MR", "M+", "M-", "MS"], id: \.self) { button in
@@ -107,6 +123,14 @@ struct ScientificCalculatorView: View {
                 .background(Color(.systemGroupedBackground))
             }
         }
+        .navigationTitle("Scientific Calculator")
+        .navigationBarTitleDisplayMode(.inline)
+        #if !os(macOS)
+        .background(
+            KeyboardCommandsControllerRepresentable(controller: keyboardController)
+                .frame(width: 0, height: 0)
+        )
+        #endif
     }
     
     struct ScientificButton: View {
@@ -224,6 +248,92 @@ struct DisplayView: View {
         .background(Color(.systemBackground))
     }
 }
+
+class KeyboardCommandsController: UIViewController {
+    weak var viewModel: CalculatorViewModel?
+    
+    init(viewModel: CalculatorViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        becomeFirstResponder()
+    }
+    
+    override var canBecomeFirstResponder: Bool {
+        true
+    }
+    
+    override var keyCommands: [UIKeyCommand]? {
+        var commands = [UIKeyCommand]()
+        
+        // Add operation commands
+        let operations = [
+            ("+", "Add"),
+            ("-", "Subtract"),
+            ("*", "Multiply"),
+            ("/", "Divide"),
+            ("\r", "Calculate"),
+            ("c", "Clear")
+        ]
+        
+        for (input, description) in operations {
+            commands.append(UIKeyCommand(
+                input: input,
+                modifierFlags: [],
+                action: #selector(handleKeyCommand(_:)),
+                discoverabilityTitle: description
+            ))
+        }
+        
+        // Add number commands
+        for number in 0...9 {
+            commands.append(UIKeyCommand(
+                input: "\(number)",
+                modifierFlags: [],
+                action: #selector(handleKeyCommand(_:)),
+                discoverabilityTitle: "Enter \(number)"
+            ))
+        }
+        
+        return commands
+    }
+    
+    @objc func handleKeyCommand(_ sender: UIKeyCommand) {
+        guard let key = sender.input else { return }
+        switch key {
+        case "0"..."9":
+            if let number = Int(key) {
+                viewModel?.numberPressed(number)
+            }
+        case "+": viewModel?.operationPressed("+")
+        case "-": viewModel?.operationPressed("-")
+        case "*": viewModel?.operationPressed("×")
+        case "/": viewModel?.operationPressed("÷")
+        case "\r": viewModel?.calculateResult()
+        case "c": viewModel?.clear()
+        default: break
+        }
+    }
+}
+
+#if !os(macOS)
+struct KeyboardCommandsControllerRepresentable: UIViewControllerRepresentable {
+    let controller: KeyboardCommandsController
+    
+    func makeUIViewController(context: Context) -> UIViewController {
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+#endif
 
 #Preview {
     ScientificCalculatorView(viewModel: CalculatorViewModel())
