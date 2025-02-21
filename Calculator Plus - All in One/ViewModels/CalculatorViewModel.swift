@@ -8,6 +8,9 @@ class CalculatorViewModel: ObservableObject {
     @Published var rate: Double = 0.0
     @Published var periods: Int = 0
     @Published var principal: Double = 0.0
+    @Published var payment: Double = 0.0
+    @Published var finalValue: Double = 0.0
+    @Published var paymentFrequency: PaymentFrequency = .monthly
     
     private var firstNumber: Double?
     private var operation: String?
@@ -152,6 +155,40 @@ class CalculatorViewModel: ObservableObject {
     func calculateSimpleInterest() {
         let interest = principal * rate * Double(periods) / 100
         displayValue = String(format: "%.2f", principal + interest)
+    }
+    
+    func calculateFutureValue() {
+        let fv = principal * pow(1 + rate/100, Double(periods))
+        displayValue = String(format: "%.2f", fv)
+    }
+    
+    func calculatePresentValue() {
+        let pv = finalValue / pow(1 + rate/100, Double(periods))
+        displayValue = String(format: "%.2f", pv)
+    }
+    
+    func calculateAnnuity() {
+        let r = rate / (100.0 * Double(paymentFrequency.paymentsPerYear))
+        let n = Double(periods * paymentFrequency.paymentsPerYear)
+        let fv = payment * (pow(1 + r, n) - 1) / r
+        displayValue = String(format: "%.2f", fv)
+    }
+    
+    func calculateROI() {
+        let roi = ((finalValue - principal) / principal) * 100
+        displayValue = String(format: "%.2f%%", roi)
+    }
+    
+    func calculateBreakEven() {
+        // Assuming fixed costs and unit contribution margin
+        let breakEvenUnits = principal / (finalValue - rate)  // Using rate as variable cost per unit
+        displayValue = String(format: "%.0f units", breakEvenUnits)
+    }
+    
+    func calculateDepreciation() {
+        // Straight-line depreciation
+        let annualDepreciation = (principal - finalValue) / Double(periods)
+        displayValue = String(format: "%.2f per year", annualDepreciation)
     }
     
     // Mode change function

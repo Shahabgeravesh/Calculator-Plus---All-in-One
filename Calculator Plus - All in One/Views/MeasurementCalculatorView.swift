@@ -6,43 +6,78 @@ struct MeasurementCalculatorView: View {
     @State private var fromValue = ""
     @State private var fromUnit = Unit.meters
     @State private var toUnit = Unit.feet
+    @State private var showingUnitInfo = false
     
     var body: some View {
-        VStack(spacing: 12) {
-            Form {
-                Section {
-                    Picker("Measurement Type", selection: $selectedUnit) {
-                        ForEach(MeasurementType.allCases, id: \.self) { type in
-                            Text(type.rawValue).tag(type)
-                        }
-                    }
-                }
-                
-                Section("Convert") {
-                    TextField("Value", text: $fromValue)
-                        .keyboardType(.decimalPad)
-                    
-                    Picker("From", selection: $fromUnit) {
-                        ForEach(selectedUnit.units, id: \.self) { unit in
-                            Text(unit.symbol).tag(unit)
+        NavigationStack {
+            VStack(spacing: 12) {
+                Form {
+                    Section {
+                        Picker("Measurement Type", selection: $selectedUnit) {
+                            ForEach(MeasurementType.allCases, id: \.self) { type in
+                                Text(type.rawValue).tag(type)
+                            }
                         }
                     }
                     
-                    Picker("To", selection: $toUnit) {
-                        ForEach(selectedUnit.units, id: \.self) { unit in
-                            Text(unit.symbol).tag(unit)
+                    Section("Convert") {
+                        HStack {
+                            TextField("Value", text: $fromValue)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                            Text(fromUnit.symbol)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        HStack {
+                            Text("From")
+                            Picker("From", selection: $fromUnit) {
+                                ForEach(selectedUnit.units, id: \.self) { unit in
+                                    Text(unit.fullName).tag(unit)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        }
+                        
+                        HStack {
+                            Text("To")
+                            Picker("To", selection: $toUnit) {
+                                ForEach(selectedUnit.units, id: \.self) { unit in
+                                    Text(unit.fullName).tag(unit)
+                                }
+                            }
+                            .pickerStyle(.menu)
                         }
                     }
-                }
-                
-                Section("Result") {
-                    Text(calculateConversion())
-                        .font(.title2)
-                        .bold()
+                    
+                    Section("Result") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(calculateConversion())
+                                .font(.title2)
+                                .bold()
+                            
+                            if let formula = conversionFormula {
+                                Text("Formula: \(formula)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
                 }
             }
+            .navigationTitle("Measurement Converter")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showingUnitInfo = true }) {
+                        Image(systemName: "info.circle")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingUnitInfo) {
+                UnitInfoView(measurementType: selectedUnit)
+            }
         }
-        .onChange(of: selectedUnit) { _ in
+        .onChange(of: selectedUnit) { oldValue, newValue in
             fromUnit = selectedUnit.defaultFromUnit
             toUnit = selectedUnit.defaultToUnit
         }
@@ -71,6 +106,30 @@ struct MeasurementCalculatorView: View {
             let liters = value * fromUnit.volumeToBase
             let result = liters / toUnit.volumeToBase
             return String(format: "%.2f %@", result, toUnit.symbol)
+        }
+    }
+    
+    private var conversionFormula: String? {
+        switch selectedUnit {
+        case .temperature:
+            return temperatureFormula
+        default:
+            return "\(fromValue) \(fromUnit.symbol) × \(fromUnit.conversionFactor) = \(toUnit.symbol)"
+        }
+    }
+    
+    private var temperatureFormula: String {
+        switch (fromUnit, toUnit) {
+        case (.celsius, .fahrenheit):
+            return "°F = °C × 9/5 + 32"
+        case (.fahrenheit, .celsius):
+            return "°C = (°F - 32) × 5/9"
+        case (.celsius, .kelvin):
+            return "K = °C + 273.15"
+        case (.kelvin, .celsius):
+            return "°C = K - 273.15"
+        default:
+            return ""
         }
     }
 }

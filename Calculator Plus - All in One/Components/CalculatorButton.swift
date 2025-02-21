@@ -17,15 +17,23 @@ struct CalculatorButton: View {
     
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.title2)
-                .fontWeight(.medium)
-                .foregroundColor(.white)
-                .frame(minWidth: 44, maxWidth: .infinity)
-                .frame(height: 60)
-                .background(color)
-                .cornerRadius(12)
-                .shadow(radius: 2)
+            VStack {
+                Text(title)
+                    .font(.system(.body, design: .rounded))
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(2)
+                    .padding(.vertical, 8)
+            }
+            .frame(height: 70)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(color)
+                    .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
+            )
         }
         .buttonStyle(CalculatorButtonStyle())
     }
@@ -41,11 +49,18 @@ struct CalculatorButtonStyle: ButtonStyle {
 }
 
 #Preview {
-    HStack {
-        CalculatorButton(title: "1") {}
-        CalculatorButton(title: "+", color: .orange) {}
+    VStack(spacing: 20) {
+        HStack(spacing: 12) {
+            CalculatorButton(title: "Compound\nInterest", color: .blue) {}
+            CalculatorButton(title: "Simple\nInterest", color: .green) {}
+        }
+        HStack(spacing: 12) {
+            CalculatorButton(title: "ROI", color: .purple) {}
+            CalculatorButton(title: "Break\nEven", color: .orange) {}
+        }
     }
     .padding()
+    .previewLayout(.sizeThatFits)
 }
 
 extension CalculatorButton {

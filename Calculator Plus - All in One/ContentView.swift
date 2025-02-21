@@ -34,7 +34,7 @@ struct ContentView: View {
             }
         }
         .background(Color(.systemGroupedBackground))
-        .onChange(of: viewModel.currentMode) { _ in
+        .onChange(of: viewModel.currentMode) { oldValue, newValue in
             viewModel.modeChanged()
         }
     }
