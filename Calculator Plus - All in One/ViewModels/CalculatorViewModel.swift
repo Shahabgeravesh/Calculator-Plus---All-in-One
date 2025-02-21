@@ -11,11 +11,13 @@ class CalculatorViewModel: ObservableObject {
     @Published var payment: Double = 0.0
     @Published var finalValue: Double = 0.0
     @Published var paymentFrequency: PaymentFrequency = .monthly
+    @Published var memory: Double = 0
+    @Published var hasMemoryValue = false
     
     private var firstNumber: Double?
     private var operation: String?
     private var shouldResetDisplay = false
-    private var memory: Double = 0
+    private var currentNumber: String = ""
     
     // Scientific operations
     func performScientificOperation(_ operation: String) {
@@ -118,25 +120,40 @@ class CalculatorViewModel: ObservableObject {
     }
     
     // Memory functions
+    func memoryClear() {
+        memory = 0
+        hasMemoryValue = false
+    }
+    
+    func memoryRecall() {
+        if hasMemoryValue {
+            displayValue = formatNumber(memory)
+            shouldResetDisplay = true
+        }
+    }
+    
     func memoryAdd() {
         if let value = Double(displayValue) {
             memory += value
+            hasMemoryValue = true
+            shouldResetDisplay = true
         }
     }
     
     func memorySubtract() {
         if let value = Double(displayValue) {
             memory -= value
+            hasMemoryValue = true
+            shouldResetDisplay = true
         }
     }
     
-    func memoryRecall() {
-        displayValue = "\(memory)"
-        shouldResetDisplay = true
-    }
-    
-    func memoryClear() {
-        memory = 0
+    func memoryStore() {
+        if let value = Double(displayValue) {
+            memory = value
+            hasMemoryValue = true
+            shouldResetDisplay = true
+        }
     }
     
     // Financial calculator functions
@@ -195,5 +212,18 @@ class CalculatorViewModel: ObservableObject {
     func modeChanged() {
         clear()
         showScientificFunctions = currentMode == .scientific
+    }
+    
+    private func formatNumber(_ number: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 8
+        formatter.minimumFractionDigits = 0
+        formatter.usesGroupingSeparator = true
+        
+        if let formattedString = formatter.string(from: NSNumber(value: number)) {
+            return formattedString
+        }
+        return String(number)
     }
 } 

@@ -30,6 +30,8 @@ struct CalculatorButtonConfig: Hashable {
         case memoryAdd
         case memorySubtract
         case memoryRecall
+        case memoryClear
+        case memoryStore
         case financial(String)
     }
     
